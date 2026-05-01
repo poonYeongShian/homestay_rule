@@ -1,0 +1,859 @@
+<!doctype html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>民宿住宿手册 - Guest House Manual</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Noto+Sans+SC:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --primary: #115e59; /* Teal 800 */
+        --secondary: #0f766e; /* Teal 600 */
+        --bg-color: #f8fafc;
+      }
+      body {
+        font-family: "Noto Sans SC", sans-serif;
+        background-color: #e2e8f0;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      h1,
+      h2,
+      h3,
+      .serif {
+        font-family: "Noto Serif SC", serif;
+      }
+      /* A4 Paper setup */
+      .a4-page {
+        width: 210mm;
+        height: 297mm;
+        background: white;
+        margin: 2rem auto;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        position: relative;
+        overflow: hidden;
+        padding: 8mm 15mm 8mm 15mm; /* 减小上下留白以避免溢出 */
+        box-sizing: border-box;
+      }
+
+      .bg-pattern {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        /* 屏幕预览使用较小的图片 */
+        background-image: url("https://images.unsplash.com/photo-1506929562872-bb421503ef21?q=40&w=600&auto=format&fit=crop");
+        background-size: cover;
+        background-position: center;
+        opacity: 0.5; /* 略微降低透明度 */
+        z-index: 0;
+        pointer-events: none;
+        /* 提升打印时图片的清晰度 */
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+      }
+
+      /* 添加遮罩：中心泛白以保证文字清晰，四周保留底图的自然感 */
+      .bg-pattern::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(
+          circle at center,
+          rgba(255, 255, 255, 0.95) 15%,
+          rgba(255, 255, 255, 0.4) 100%
+        );
+      }
+
+      /* 打印 / PDF 导出时使用更高分辨率的图片，保证 A4 尺寸下不模糊 */
+      @media print {
+        .bg-pattern {
+          /* A4 在 150dpi 下需要约 1240px 宽，1200px 已经足够清晰 */
+          background-image: url("https://images.unsplash.com/photo-1506929562872-bb421503ef21?q=55&w=1200&auto=format&fit=crop") !important;
+        }
+        /* 强制保留背景颜色与图片在 PDF 中显示 */
+        * {
+          -webkit-print-color-adjust: exact !important;
+          print-color-adjust: exact !important;
+        }
+        /* 改善图标 SVG 与文字的渲染锐度 */
+        body, .a4-page, .content {
+          text-rendering: geometricPrecision;
+        }
+      }
+
+      .content {
+        position: relative;
+        z-index: 1;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .zh-text {
+        color: #334155;
+        font-size: 0.85rem;
+        line-height: 1.5;
+        margin-bottom: 0.25rem;
+        text-align: justify;
+      }
+
+      .en-text {
+        color: #64748b;
+        font-size: 0.75rem;
+        line-height: 1.4;
+        margin-bottom: 0.75rem;
+        text-align: justify;
+      }
+
+      .item-box {
+        background: rgba(248, 250, 252, 0.8);
+        border-left: 3px solid var(--secondary);
+        padding: 0.5rem 0.8rem; /* 稍微缩减内边距，节省空间 */
+        border-radius: 0 0.5rem 0.5rem 0;
+        margin-bottom: 0.5rem; /* 缩减底部间距 */
+      }
+
+      /* Print styles */
+      @media print {
+        @page {
+          size: A4;
+          margin: 0; /* 隐藏浏览器打印时默认的页眉页脚（如网址、日期等） */
+        }
+        html,
+        body {
+          background-color: white;
+          margin: 0 !important;
+          padding: 0 !important;
+          width: 210mm;
+        }
+        .a4-page {
+          margin: 0 !important;
+          box-shadow: none !important;
+          width: 210mm;
+          height: 297mm;
+          /* 比A4略矮，避免内容溢出生成空白页 */
+          max-height: 296mm;
+          overflow: hidden;
+          padding: 8mm 15mm 8mm 15mm;
+          page-break-inside: avoid;
+          break-inside: avoid;
+        }
+        /* 仅在非最后一页的后面添加分页符，防止生成多余的第3页空白页 */
+        .a4-page:not(:last-child) {
+          page-break-after: always;
+          break-after: page;
+        }
+        .a4-page:last-child {
+          page-break-after: avoid;
+          break-after: avoid;
+        }
+        .no-print {
+          display: none !important;
+        }
+      }
+
+      /* AI Chatbot Styles */
+      .chat-bubble p {
+        margin-bottom: 0.5em;
+      }
+      .chat-bubble p:last-child {
+        margin-bottom: 0;
+      }
+      .chat-bubble ul {
+        list-style-type: disc;
+        margin-left: 1.5em;
+        margin-bottom: 0.5em;
+      }
+      .chat-bubble ol {
+        list-style-type: decimal;
+        margin-left: 1.5em;
+        margin-bottom: 0.5em;
+      }
+      .chat-bubble strong {
+        font-weight: bold;
+        color: #0f766e;
+      }
+      .typing-indicator span {
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        background-color: #0f766e;
+        border-radius: 50%;
+        animation: typing 1.4s infinite ease-in-out both;
+        margin-right: 2px;
+      }
+      .typing-indicator span:nth-child(1) {
+        animation-delay: -0.32s;
+      }
+      .typing-indicator span:nth-child(2) {
+        animation-delay: -0.16s;
+      }
+      @keyframes typing {
+        0%,
+        80%,
+        100% {
+          transform: scale(0);
+        }
+        40% {
+          transform: scale(1);
+        }
+      }
+
+      /* Custom scrollbar for chat */
+      #chat-history::-webkit-scrollbar {
+        width: 6px;
+      }
+      #chat-history::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+      #chat-history::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+      }
+      #chat-history::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+      }
+    </style>
+  </head>
+  <body class="py-8 text-gray-800">
+    <!-- Print Hint Button -->
+    <div class="fixed top-4 right-4 z-40 no-print">
+      <button
+        onclick="window.print()"
+        class="bg-teal-700 hover:bg-teal-800 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 transition-colors"
+      >
+        <i data-lucide="printer" class="w-5 h-5"></i>
+        打印 / 另存为PDF
+      </button>
+    </div>
+
+    <!-- AI Floating Button -->
+    <button
+      id="ai-toggle-btn"
+      class="fixed bottom-6 right-6 z-40 bg-teal-600 hover:bg-teal-700 text-white p-4 rounded-full shadow-2xl transition-all transform hover:scale-105 flex items-center justify-center gap-2 no-print group"
+    >
+      <i data-lucide="sparkles" class="w-6 h-6 animate-pulse"></i>
+      <span class="font-bold hidden group-hover:inline-block pr-2"
+        >✨ 智能管家</span
+      >
+    </button>
+
+    <!-- AI Chat Panel -->
+    <div
+      id="ai-panel"
+      class="fixed right-0 top-0 h-full w-full sm:w-[400px] bg-white shadow-2xl transform translate-x-full transition-transform duration-300 z-50 flex flex-col no-print border-l border-teal-100"
+    >
+      <!-- Header -->
+      <div
+        class="bg-teal-700 text-white p-4 flex justify-between items-center shadow-md"
+      >
+        <div class="flex items-center gap-3">
+          <div class="bg-white/20 p-2 rounded-full">
+            <i data-lucide="bot" class="w-6 h-6"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-lg leading-tight">✨ AI 民宿管家</h3>
+            <p class="text-teal-200 text-xs">
+              24小时为您服务 (Powered by Gemini)
+            </p>
+          </div>
+        </div>
+        <button
+          id="ai-close-btn"
+          class="hover:bg-white/20 p-2 rounded-full transition-colors"
+        >
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Chat History -->
+      <div
+        id="chat-history"
+        class="flex-1 overflow-y-auto p-4 flex flex-col gap-4 bg-slate-50"
+      >
+        <!-- Initial Greeting -->
+        <div class="flex gap-3">
+          <div
+            class="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0 text-teal-700"
+          >
+            <i data-lucide="sparkles" class="w-4 h-4"></i>
+          </div>
+          <div
+            class="bg-white border border-slate-200 p-3 rounded-2xl rounded-tl-none shadow-sm text-sm text-slate-700 chat-bubble"
+          >
+            <p>
+              您好！我是您的 <strong>AI智能管家</strong>。欢迎入住我们的民宿！👋
+            </p>
+            <p>
+              我已仔细阅读了本住宿手册，您可以问我任何关于规定的问题（比如：<em>灭火器在哪？能不能抽烟？</em>）。
+            </p>
+            <p>除此之外，我还能：</p>
+            <ul>
+              <li>✨ 根据 E-MART 的食材教您做马来西亚特色菜</li>
+              <li>✨ 帮您规划周边的半日游或美食路线</li>
+              <li>✨ 为您提供多语言的实时翻译</li>
+            </ul>
+            <p>请问有什么可以帮您的吗？</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading Indicator (Hidden by default) -->
+      <div id="ai-loading" class="hidden p-4 flex gap-3 bg-slate-50">
+        <div
+          class="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0 text-teal-700"
+        >
+          <i data-lucide="sparkles" class="w-4 h-4"></i>
+        </div>
+        <div
+          class="bg-white border border-slate-200 p-3 py-4 rounded-2xl rounded-tl-none shadow-sm flex items-center"
+        >
+          <div class="typing-indicator">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Prompts -->
+      <div class="p-3 bg-white border-t border-slate-100 flex flex-wrap gap-2">
+        <button
+          class="quick-prompt text-xs bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 px-3 py-1.5 rounded-full transition-colors"
+        >
+          消防设备在哪里？
+        </button>
+        <button
+          class="quick-prompt text-xs bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 px-3 py-1.5 rounded-full transition-colors"
+        >
+          ✨ 附近有什么好吃的？
+        </button>
+        <button
+          class="quick-prompt text-xs bg-teal-50 hover:bg-teal-100 text-teal-700 border border-teal-200 px-3 py-1.5 rounded-full transition-colors"
+        >
+          ✨ 用 E-MART 买的食材教我做菜
+        </button>
+      </div>
+
+      <!-- Input Area -->
+      <div class="p-4 bg-white border-t border-slate-200 flex gap-2">
+        <input
+          type="text"
+          id="ai-input"
+          class="flex-1 bg-slate-100 border-none rounded-xl px-4 py-2 focus:ring-2 focus:ring-teal-500 focus:outline-none text-sm"
+          placeholder="输入您的问题..."
+        />
+        <button
+          id="ai-send-btn"
+          class="bg-teal-600 hover:bg-teal-700 text-white p-2 px-4 rounded-xl shadow-md transition-colors flex items-center justify-center"
+        >
+          <i data-lucide="send" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- ---------------- PAGE CONTENT ---------------- -->
+
+    <!-- PAGE 1 -->
+    <div class="a4-page" id="page-content">
+      <div class="bg-pattern"></div>
+      <div class="content">
+        <!-- Header (Reduced top padding here: pt-8 -> pt-2, pb-10 -> pb-6) -->
+        <div class="text-center pt-0 pb-3">
+          <i data-lucide="home" class="w-7 h-7 mx-auto text-teal-700 mb-1"></i>
+          <h1 class="text-3xl font-bold text-teal-800 tracking-widest mb-1">
+            住宿手冊
+          </h1>
+          <p
+            class="text-xs text-teal-600 uppercase tracking-widest letter-spacing-2"
+          >
+            Guest House Manual
+          </p>
+          <div class="w-16 h-1 bg-teal-500 mx-auto mt-2 rounded-full"></div>
+        </div>
+
+        <!-- Section 1: Safety Information -->
+        <div class="flex-1">
+          <div
+            class="flex items-center gap-3 border-b-2 border-teal-100 pb-2 mb-3"
+          >
+            <div class="bg-teal-100 p-2 rounded-full text-teal-700">
+              <i data-lucide="shield-alert" class="w-6 h-6"></i>
+            </div>
+            <div>
+              <h2 class="text-xl font-bold text-teal-800">一、安全提示</h2>
+              <p class="text-xs text-teal-600 uppercase">Safety Information</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 gap-1">
+            <!-- Item 1.1 -->
+            <div class="item-box">
+              <div class="flex items-center gap-2 mb-1">
+                <i data-lucide="flame" class="w-4 h-4 text-rose-500"></i>
+                <h3 class="font-bold text-gray-800 text-sm">
+                  1. 消防安全提示 / Fire Safety
+                </h3>
+              </div>
+              <p class="zh-text">
+                为守护您的安全，屋内已配备灭火器（位于廚房下方）。<br />民宿室內外嚴禁吸烟及电子烟、若造成物品損害,照价賠償。馬來西亞法令規定公共空間禁煙,違反者處予高額罰款。<br />若遇火災，沿逃生路线有序撤离，紧急情况可拨打紧急电话或999。<br /><span
+                  class="text-amber-600 font-medium"
+                  >温馨提醒：</span
+                >房间内所有插座均为额定电压220V，请勿插入非适配电器，避免短路引发安全隐患。
+              </p>
+              <p class="en-text">
+                For your safety, a fire extinguisher is provided (located under
+                the kitchen area). Smoking and e-cigarettes are strictly
+                prohibited indoors and outdoors. Any damage caused will be
+                charged accordingly. Malaysian law prohibits smoking in public
+                areas, and violations may result in heavy fines. In case of
+                fire, please evacuate calmly following the escape route. For
+                emergencies, dial 999. <br /><i
+                  >Kindly note: All sockets are rated at 220V. Please do not use
+                  incompatible electrical devices to avoid short circuits or
+                  hazards.</i
+                >
+              </p>
+            </div>
+
+            <!-- Item 1.2 -->
+            <div class="item-box">
+              <div class="flex items-center gap-2 mb-1">
+                <i data-lucide="lock" class="w-4 h-4 text-teal-600"></i>
+                <h3 class="font-bold text-gray-800 text-sm">
+                  2. 防盗安全提示 / Security
+                </h3>
+              </div>
+              <p class="zh-text">
+                离开房间时请务必关好房门，贵重物品建议妥当存放，或随身携带。若发现房门锁具异常、陌生人敲门，请勿轻易开门并立即联系屋主。
+              </p>
+              <p class="en-text">
+                Please ensure the door is locked when leaving the room. Keep
+                your valuables secure or carry them with you. If you notice any
+                issues with the door lock or encounter strangers knocking, do
+                not open the door and contact the host immediately.
+              </p>
+            </div>
+
+            <!-- Item 1.3 -->
+            <div class="item-box">
+              <div class="flex items-center gap-2 mb-1">
+                <i
+                  data-lucide="utensils-crossed"
+                  class="w-4 h-4 text-orange-500"
+                ></i>
+                <h3 class="font-bold text-gray-800 text-sm">
+                  3. 厨房安全提示 / Kitchen Safety
+                </h3>
+              </div>
+              <p class="zh-text">
+                使用厨房时，灶台周边避免摆放易燃物品，廚房使用时，人不离灶。<br />闻到燃气异味，快关电器、开窗通风，勿动电器以免誤觸。<br />电水壶加水请勿超过最高刻度，煮沸后及时断电，防止干烧损坏或引发危险。
+              </p>
+              <p class="en-text">
+                Do not place flammable items near the stove. Never leave cooking
+                unattended. If you smell gas, turn off the gas supply, open
+                windows for ventilation, and do not operate any electrical
+                appliances. Do not exceed the maximum water level when using the
+                electric kettle. Switch it off promptly after boiling.
+              </p>
+            </div>
+
+            <!-- Item 1.4 -->
+            <div class="item-box">
+              <div class="flex items-center gap-2 mb-1">
+                <i data-lucide="bath" class="w-4 h-4 text-blue-500"></i>
+                <h3 class="font-bold text-gray-800 text-sm">
+                  4. 卫生间安全提示 / Bathroom Safety
+                </h3>
+              </div>
+              <p class="zh-text">
+                使用浴室熱水器等大功率电电器，离开时请隨手关闭电源。<br />若发现水管漏水、热水器异常（如异响、漏水），请立即关闭阀门并联系屋主。
+              </p>
+              <p class="en-text">
+                Please switch off power when not using high-power appliances
+                such as the water heater. If you notice water leakage or heater
+                malfunction (noise, leaks), turn off the valve immediately and
+                contact the host.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Page Footer -->
+        <div
+          class="mt-auto pt-4 border-t border-gray-200 text-center text-xs text-gray-400 font-serif"
+        >
+          - 1 -
+        </div>
+      </div>
+    </div>
+
+    <!-- PAGE 2 -->
+    <div class="a4-page">
+      <div class="bg-pattern"></div>
+      <div class="content">
+        <!-- Section 2: House Rules -->
+        <div
+          class="flex items-center gap-3 border-b-2 border-teal-100 pb-2 mb-3 mt-1"
+        >
+          <div class="bg-teal-100 p-2 rounded-full text-teal-700">
+            <i data-lucide="book-open-check" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold text-teal-800">二、住宿行为提示</h2>
+            <p class="text-[10px] text-teal-600 uppercase">House Rules</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-x-4 gap-y-1">
+          <!-- Item 2.1 -->
+          <div class="item-box col-span-2">
+            <div class="flex items-center gap-2 mb-1">
+              <i data-lucide="volume-x" class="w-4 h-4 text-indigo-500"></i>
+              <h3 class="font-bold text-gray-800 text-sm">
+                1. 噪音与作息 / Noise & Quiet Hours
+              </h3>
+            </div>
+            <p class="zh-text">
+              为给您及其他住客营造舒适环境，建议每日 22:00
+              后主动降低室内音量，轻声交谈。避免高跟鞋频繁走动、搬运重物等声响，共同守护休息时光。
+            </p>
+            <p class="en-text mb-0">
+              To ensure a comfortable stay, please keep noise levels low after
+              10:00 PM. Avoid loud footsteps and moving heavy objects that may
+              cause disturbance.
+            </p>
+          </div>
+
+          <!-- Item 2.2 -->
+          <div class="item-box col-span-2">
+            <div class="flex items-center gap-2 mb-1">
+              <i data-lucide="armchair" class="w-4 h-4 text-amber-600"></i>
+              <h3 class="font-bold text-gray-800 text-sm">
+                2. 物品使用与爱护 / Use of Property
+              </h3>
+            </div>
+            <p class="zh-text">
+              房间家具均为精心挑选，请勿站立或挪动重物撞击，损坏需按成本价赔偿。电器已调试至最佳状态，遇问题请联系屋主。床品一客一换，若沾染顽固污渍需额外支付清洗费，建议在桌前进食。
+            </p>
+            <p class="en-text mb-0">
+              Please do not stand on or roughly move furniture. Damage will be
+              charged at replacement cost. Contact host for appliance help.
+              Bedding is changed per guest; tough stains incur cleaning charges.
+              Please eat at the dining table.
+            </p>
+          </div>
+
+          <!-- Item 2.3 & 2.4 & 2.5 in a grid row -->
+          <div class="item-box">
+            <div class="flex items-center gap-2 mb-1">
+              <i data-lucide="alert-triangle" class="w-4 h-4 text-red-500"></i>
+              <h3 class="font-bold text-gray-800 text-sm">
+                3. 明确责任 / Responsibility
+              </h3>
+            </div>
+            <p class="zh-text text-xs">
+              禁止在公共區域,樓梯間,閣樓上奔跑嬉戲,若发生意外受傷或設施損壞,由家長或監護人承擔責任。
+            </p>
+            <p class="en-text text-[10px] mb-0">
+              Running/playing in public areas is prohibited. Injuries/damages
+              are the responsibility of the guest/guardian.
+            </p>
+          </div>
+
+          <div class="item-box">
+            <div class="flex items-center gap-2 mb-1">
+              <i data-lucide="ban" class="w-4 h-4 text-gray-500"></i>
+              <h3 class="font-bold text-gray-800 text-sm">
+                4. 宠物 / Pets Policy
+              </h3>
+            </div>
+            <p class="zh-text text-xs">
+              为保障所有住客的健康，本民宿禁止携带宠物入住, 感谢您的配合。
+            </p>
+            <p class="en-text text-[10px] mb-0">
+              Pets are not allowed in the property. Thank you for your
+              understanding.
+            </p>
+          </div>
+
+          <!-- Item 2.5 -->
+          <div class="item-box col-span-2">
+            <div class="flex items-center gap-2 mb-1">
+              <i data-lucide="circle-alert" class="w-4 h-4 text-rose-600"></i>
+              <h3 class="font-bold text-gray-800 text-sm">
+                5. 遵守規定 / Compliance
+              </h3>
+            </div>
+            <p class="zh-text text-xs mb-0">
+              嚴禁吸菸、酗酒、轟趴、嗑藥，亦不可擅自烹飪或烤肉。
+            </p>
+            <p class="en-text text-[10px] mb-0">
+              Smoking, excessive drinking, parties, drugs, and unauthorized cooking or barbecuing are strictly prohibited.
+            </p>
+          </div>
+        </div>
+
+        <!-- Disclaimer as a small note -->
+        <div
+          class="text-center bg-gray-100 rounded-md py-1 px-2 my-1 text-xs text-gray-500 border border-gray-200"
+        >
+          <strong>民宿免责 Disclaimer:</strong>
+          透過此公告方式,試圖將因客人行為不當所產生的意外風險降至最低 /
+          Guidelines are to minimize risks caused by improper behavior.
+        </div>
+
+        <!-- Section 3: Friendly Reminders -->
+        <div
+          class="flex items-center gap-3 border-b-2 border-teal-100 pb-2 mb-3 mt-1"
+        >
+          <div class="bg-teal-100 p-2 rounded-full text-teal-700">
+            <i data-lucide="heart-handshake" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold text-teal-800">三、温馨提示</h2>
+            <p class="text-[10px] text-teal-600 uppercase">
+              Friendly Reminders
+            </p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 gap-1">
+          <!-- Item 3.1 -->
+          <div class="item-box">
+            <div class="flex items-center gap-2 mb-1">
+              <i data-lucide="spray-can" class="w-4 h-4 text-pink-500"></i>
+              <h3 class="font-bold text-gray-800 text-sm">
+                1. 生活便利提示 / Daily Convenience
+              </h3>
+            </div>
+            <p class="zh-text">
+              <strong>卫生间：</strong
+              >抽屉内备有洗发精及沐浴乳，洗澡请注意脚下防滑。<br /><strong
+                >厨房：</strong
+              >免费使用，餐具已消毒。使用后请清洗归位，造成髒亂將收取清潔費；冰箱可存放食材，退房前请清理个人物品。
+            </p>
+            <p class="en-text">
+              Bathroom: Disposable shampoo/body wash provided. Careful of
+              slippery floors. <br />Kitchen: Free to use. Clean and return
+              utensils after use; excessive mess incurs fees. Remove personal
+              items from fridge before check-out.
+            </p>
+          </div>
+
+          <!-- Item 3.2 & 3.3 combined in two columns -->
+          <div class="grid grid-cols-2 gap-4">
+            <div class="item-box m-0">
+              <div class="flex items-center gap-2 mb-1">
+                <i data-lucide="map-pin" class="w-4 h-4 text-emerald-600"></i>
+                <h3 class="font-bold text-gray-800 text-sm">
+                  2. 周边指引 / Nearby
+                </h3>
+              </div>
+              <ul class="list-disc pl-4 zh-text text-xs">
+                <li>步行3分钟至E-MART (24h)</li>
+                <li>步行5分钟至各种市场</li>
+                <li>楼下右转100米有24h便利店</li>
+                <li>鄰近商店有自助洗衣机</li>
+              </ul>
+              <p class="en-text text-[10px] mt-1 mb-0">
+                3-min walk to E-MART (24h), 5-min to markets. Convenience store
+                100m downstairs right. Self-laundry nearby.
+              </p>
+            </div>
+
+            <div class="item-box m-0">
+              <div class="flex items-center gap-2 mb-1">
+                <i data-lucide="cloud-rain" class="w-4 h-4 text-sky-500"></i>
+                <h3 class="font-bold text-gray-800 text-sm">
+                  3. 特殊天气 / Weather
+                </h3>
+              </div>
+              <p class="zh-text text-xs">
+                雨天，樓梯处备有雨伞（免费借用，退房归还）。出门前请关好门窗；走廊地面湿滑，请慢步。
+              </p>
+              <p class="en-text text-[10px] mt-1 mb-0">
+                Umbrellas available near staircase (return at check-out). Close
+                windows/doors before leaving. Walk carefully on wet floors.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Page Footer -->
+        <div
+          class="mt-auto pt-4 border-t border-gray-200 text-center text-xs text-gray-400 font-serif"
+        >
+          - 2 -
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Initialize Lucide Icons
+      lucide.createIcons();
+
+      // ---------------- AI CHATBOT LOGIC ---------------- //
+      const aiToggleBtn = document.getElementById("ai-toggle-btn");
+      const aiCloseBtn = document.getElementById("ai-close-btn");
+      const aiPanel = document.getElementById("ai-panel");
+      const aiInput = document.getElementById("ai-input");
+      const aiSendBtn = document.getElementById("ai-send-btn");
+      const chatHistory = document.getElementById("chat-history");
+      const aiLoading = document.getElementById("ai-loading");
+      const quickPrompts = document.querySelectorAll(".quick-prompt");
+
+      // Gemini API Configuration
+      const apiKey = ""; // API Key is provided by the execution environment
+      const modelEndpoint =
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent";
+
+      // Extract context directly from the page
+      const getDocumentContext = () => {
+        const content = document.getElementById("page-content").innerText;
+        return `
+你是一个专为此民宿打造的“✨ AI智能管家”。你的任务是热情、友好地回答客人的问题。
+以下是该民宿的【住宿手册】内容，请将其作为你的核心知识库：
+---
+${content}
+---
+职责说明：
+1. 提取规定：当客人询问入住规定、物品位置（如灭火器、WiFi、雨伞）时，请准确基于上方手册内容回答。
+2. 美食与规划：如果客人询问周边美食、利用厨房做菜（如利用E-MART买的食材），请利用你的通用知识，推荐马来西亚当地的特色美食、食谱或旅行建议（因为手册提到马来西亚法令，说明民宿位于马来西亚）。
+3. 语言翻译：如果客人用英文提问，请用英文回答；用中文提问，请用中文回答。
+4. 语气：保持专业、亲切，多使用emoji，如 😊、✨、🍳 等。
+5. 排版：请使用简单的 Markdown 格式（如加粗、列表）让内容更易读，不要太冗长。
+`;
+      };
+
+      let messageHistory = [];
+
+      // UI toggles
+      aiToggleBtn.addEventListener("click", () => {
+        aiPanel.classList.remove("translate-x-full");
+        aiInput.focus();
+      });
+      aiCloseBtn.addEventListener("click", () => {
+        aiPanel.classList.add("translate-x-full");
+      });
+
+      // Add message to UI
+      function appendMessage(text, isUser = false) {
+        const wrapper = document.createElement("div");
+        wrapper.className = `flex gap-3 ${isUser ? "flex-row-reverse" : ""}`;
+
+        let iconHtml = isUser
+          ? `<div class="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center flex-shrink-0 text-slate-600"><i data-lucide="user" class="w-4 h-4"></i></div>`
+          : `<div class="w-8 h-8 rounded-full bg-teal-100 flex items-center justify-center flex-shrink-0 text-teal-700"><i data-lucide="sparkles" class="w-4 h-4"></i></div>`;
+
+        // Parse Markdown for AI responses
+        let contentHtml = isUser ? text : marked.parse(text);
+
+        let bubbleClass = isUser
+          ? "bg-teal-600 text-white border-none rounded-2xl rounded-tr-none"
+          : "bg-white border border-slate-200 text-slate-700 rounded-2xl rounded-tl-none chat-bubble";
+
+        wrapper.innerHTML = `
+                ${iconHtml}
+                <div class="p-3 shadow-sm text-sm ${bubbleClass}">
+                    ${isUser ? `<p>${contentHtml}</p>` : contentHtml}
+                </div>
+            `;
+
+        chatHistory.appendChild(wrapper);
+        lucide.createIcons();
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+      }
+
+      // Call Gemini API with Exponential Backoff
+      async function fetchGeminiResponse(userText) {
+        const systemInstruction = getDocumentContext();
+
+        // Construct payload with conversation history
+        const parts = messageHistory.map((msg) => ({ text: msg }));
+        parts.push({ text: userText });
+
+        const payload = {
+          contents: [{ parts: [{ text: userText }] }],
+          systemInstruction: { parts: [{ text: systemInstruction }] },
+        };
+
+        let retries = 5;
+        let delay = 1000;
+
+        while (retries > 0) {
+          try {
+            const response = await fetch(`${modelEndpoint}?key=${apiKey}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+              throw new Error(data.error?.message || "API request failed");
+            }
+
+            const replyText = data.candidates[0].content.parts[0].text;
+            messageHistory.push(`User: ${userText}`, `AI: ${replyText}`);
+            return replyText;
+          } catch (error) {
+            console.error(
+              `Gemini API Error (retries left: ${retries - 1}):`,
+              error,
+            );
+            retries--;
+            if (retries === 0)
+              return "抱歉，管家刚才走神了，能再问一遍吗？😅 (网络请求错误)";
+            await new Promise((r) => setTimeout(r, delay));
+            delay *= 2;
+          }
+        }
+      }
+
+      // Handle sending message
+      async function handleSend(text) {
+        if (!text.trim()) return;
+
+        // 1. Show user message
+        appendMessage(text, true);
+        aiInput.value = "";
+
+        // 2. Show loading
+        aiLoading.classList.remove("hidden");
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+
+        // 3. Fetch response
+        const responseText = await fetchGeminiResponse(text);
+
+        // 4. Hide loading & show response
+        aiLoading.classList.add("hidden");
+        appendMessage(responseText, false);
+      }
+
+      // Event Listeners for Chat
+      aiSendBtn.addEventListener("click", () => handleSend(aiInput.value));
+      aiInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") handleSend(aiInput.value);
+      });
+
+      // Event Listeners for Quick Prompts
+      quickPrompts.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const text = btn.innerText;
+          handleSend(text);
+        });
+      });
+    </script>
+  </body>
+</html>
